@@ -771,6 +771,46 @@ class AbstractSNN:
 
         return top1acc_total
 
+    def predict(self, X_test):
+        from tqdm import tqdm
+        
+        # Load neuron layers and connections if conversion was done during a
+        # previous session.
+        if not self.is_built:
+            self.restore_snn()
+
+        self.init_log_vars()
+        self.init_cells()
+
+        output_spike_rates = []
+        for input_vector_number in tqdm(
+            range(len(X_test)),
+            leave=False,
+            # Disable the progress bar if output is non-TTY.
+            disable=None
+        ):
+            # simulate() expects a numpy array with the shape (1, *),
+            # this is why my loop has to be so ugly.
+            spike_rates_for_timesteps = self.simulate(
+                x_b_l=X_test[input_vector_number : input_vector_number + 1]
+            )
+            # simulate() returns an array with the shape
+            # (batch_size=1, number_of_classes, number_of_timesteps_per_input).
+            # For each timestep, the total number of spikes
+            # accumulated up to the current timestep is recorded.
+            # Therefore, in order to get the total number of spikes,
+            # we look at the last timestep.
+            spike_rates = spike_rates_for_timesteps[:,:,-1]
+            # Now spike_rates have the shape
+            # (batch_size=1, number_of_classes).
+            output_spike_rates.extend(spike_rates)
+
+            # Reset network variables.
+            self.reset(input_vector_number)
+            self.reset_log_vars()
+
+        return output_spike_rates
+
     def setup_layers(self, batch_shape):
         """Iterates over all layers to instantiate them in the simulator"""
 
