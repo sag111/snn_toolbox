@@ -151,7 +151,7 @@ def run_pipeline(config, queue=None):
         if queue:
             queue.put(results)
 
-    return results
+    return spiking_model
 
 
 def is_stop(queue):

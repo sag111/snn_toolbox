@@ -28,8 +28,7 @@ def main(filepath=None):
 
     if filepath is not None:
         config = update_setup(filepath)
-        run_pipeline(config)
-        return
+        return run_pipeline(config)
 
     parser = argparse.ArgumentParser(
         description='Run SNN toolbox to convert an analog neural network into '
