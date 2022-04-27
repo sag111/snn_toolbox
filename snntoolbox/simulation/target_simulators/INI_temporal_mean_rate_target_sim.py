@@ -144,7 +144,10 @@ class SNN(AbstractSNN):
         output_b_l_t = np.zeros((self.batch_size, self.num_classes,
                                  self._num_timesteps))
 
-        print("Current accuracy of batch:")
+        if str('truth_b') in kwargs:
+            # Only calculate the accuracy
+            # if ground truth class labels are passed.
+            print("Current accuracy of batch:")
 
         # Loop through simulation time.
         self._input_spikecount = 0
@@ -210,18 +213,21 @@ class SNN(AbstractSNN):
                         self.neuron_operations_b_t[:, 0] += self.fanin[1] * \
                             self.num_neurons[1] * np.ones(self.batch_size) * 2
 
-            spike_sums_b_l = np.sum(output_b_l_t, 2)
-            undecided_b = np.sum(spike_sums_b_l, 1) == 0
-            guesses_b = np.argmax(spike_sums_b_l, 1)
-            none_class_b = -1 * np.ones(self.batch_size)
-            clean_guesses_b = np.where(undecided_b, none_class_b, guesses_b)
-            current_acc = np.mean(kwargs[str('truth_b')] == clean_guesses_b)
-            if self.config.getint('output', 'verbose') > 0 \
-                    and sim_step % 1 == 0:
-                echo('{:.2%}_'.format(current_acc))
-            else:
-                sys.stdout.write('\r{:>7.2%}'.format(current_acc))
-                sys.stdout.flush()
+            if str('truth_b') in kwargs:
+                # Only calculate the accuracy
+                # if ground truth class labels are passed.
+                spike_sums_b_l = np.sum(output_b_l_t, 2)
+                undecided_b = np.sum(spike_sums_b_l, 1) == 0
+                guesses_b = np.argmax(spike_sums_b_l, 1)
+                none_class_b = -1 * np.ones(self.batch_size)
+                clean_guesses_b = np.where(undecided_b, none_class_b, guesses_b)
+                current_acc = np.mean(kwargs[str('truth_b')] == clean_guesses_b)
+                if self.config.getint('output', 'verbose') > 0 \
+                        and sim_step % 1 == 0:
+                    echo('{:.2%}_'.format(current_acc))
+                else:
+                    sys.stdout.write('\r{:>7.2%}'.format(current_acc))
+                    sys.stdout.flush()
 
         if self._is_aedat_input:
             remaining_events = \
