@@ -14,39 +14,27 @@ Important functions:
 """
 
 import os
+from collections import namedtuple
 from importlib import import_module
 
 from snntoolbox.parsing.model_libs.keras_input_lib import load
 
 
-def run_pipeline(config, queue=None):
-    """Convert an analog network to a spiking network and simulate it.
+Spiking_model_and_results = namedtuple(
+    'Spiking_model_and_results',
+    ['spiking_model', 'results']
+)
+def obtain_spiking_model(config, queue=None):
+    """Convert an analog network to a spiking network and return it.
 
-    Complete pipeline of
+    A part of the steps from run_pipeline() are moved here:
         1. loading and testing a pretrained ANN,
         2. normalizing parameters
-        3. converting it to SNN,
-        4. running it on a simulator,
-        5. given a specified hyperparameter range ``params``,
-           repeat simulations with modified parameters.
+        3. converting it to SNN.
 
-    Parameters
-    ----------
-
-    config: configparser.ConfigParser
-        ConfigParser containing the user settings.
-
-    queue: Optional[Queue.Queue]
-        Results are added to the queue to be displayed in the GUI.
-
-    Returns
-    -------
-
-    results: list
-        List of the accuracies obtained after simulating with each parameter
-        value in config.get('parameter_sweep', 'param_values').
+    Returns the spiking model object that
+    target_sim.SNN() creates.
     """
-
     from snntoolbox.datasets.utils import get_dataset
     from snntoolbox.conversion.utils import normalize_parameters
 
@@ -131,6 +119,47 @@ def run_pipeline(config, queue=None):
         spiking_model.save(config.get('paths', 'path_wd'),
                            config.get('paths', 'filename_snn'))
 
+    return Spiking_model_and_results(
+        spiking_model=spiking_model,
+        results=results
+    )
+
+
+def run_pipeline(config, queue=None):
+    """Convert an analog network to a spiking network and simulate it.
+
+    Complete pipeline of
+        1. loading and testing a pretrained ANN,
+        2. normalizing parameters
+        3. converting it to SNN,
+        4. running it on a simulator,
+        5. given a specified hyperparameter range ``params``,
+           repeat simulations with modified parameters.
+
+    Parameters
+    ----------
+
+    config: configparser.ConfigParser
+        ConfigParser containing the user settings.
+
+    queue: Optional[Queue.Queue]
+        Results are added to the queue to be displayed in the GUI.
+
+    Returns
+    -------
+
+    results: list
+        List of the accuracies obtained after simulating with each parameter
+        value in config.get('parameter_sweep', 'param_values').
+    """
+    from snntoolbox.datasets.utils import get_dataset
+
+    # ___________________________ LOAD DATASET ______________________________ #
+    normset, testset = get_dataset(config)
+
+    # Parse, normalize, and convert to spiking.
+    spiking_model, results = obtain_spiking_model(config=config, queue=queue)
+
     # ______________________________ SIMULATE _______________________________ #
 
     if config.getboolean('tools', 'simulate') and not is_stop(queue):
@@ -151,7 +180,7 @@ def run_pipeline(config, queue=None):
         if queue:
             queue.put(results)
 
-    return spiking_model
+    return results
 
 
 def is_stop(queue):
