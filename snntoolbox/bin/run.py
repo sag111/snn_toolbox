@@ -14,6 +14,13 @@ import argparse
 import os
 
 
+def read_config_and_run_pipeline(filepath):
+    from snntoolbox.bin.utils import update_setup, run_pipeline
+    config = update_setup(filepath)
+    run_pipeline(config)
+    return
+
+
 def main(filepath=None):
     """Entry point for running the toolbox.
 
@@ -24,12 +31,9 @@ def main(filepath=None):
     executable during :ref:`installation` that can be called from terminal.
 
     """
-    from snntoolbox.bin.utils import update_setup, run_pipeline
 
     if filepath is not None:
-        config = update_setup(filepath)
-        run_pipeline(config)
-        return
+        return read_config_and_run_pipeline(filepath)
 
     parser = argparse.ArgumentParser(
         description='Run SNN toolbox to convert an analog neural network into '
@@ -41,23 +45,17 @@ def main(filepath=None):
                              'Omit this flag to open GUI.')
     args = parser.parse_args()
 
+    if not args.terminal:
+        from snntoolbox.bin.gui import gui
+        return gui.main()
+
     _filepath = os.path.abspath(args.config_filepath)
     if _filepath is not None:
-        config = update_setup(_filepath)
-
-        if args.terminal:
-            run_pipeline(config)
-        else:
-            from snntoolbox.bin.gui import gui
-            gui.main()
+        return read_config_and_run_pipeline(_filepath)
     else:
-        if args.terminal:
-            parser.error("When using the SNN toolbox from terminal, a "
-                         "config_filepath argument must be provided.")
-            return
-        else:
-            from snntoolbox.bin.gui import gui
-            gui.main()
+        parser.error("When using the SNN toolbox from terminal, a "
+                     "config_filepath argument must be provided.")
+        return
 
 
 if __name__ == '__main__':
