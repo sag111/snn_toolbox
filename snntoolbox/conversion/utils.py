@@ -140,6 +140,7 @@ def normalize_parameters(model, config, **kwargs):
 
         # Scale parameters
         parameters = layer.get_weights()
+        scale_fac = scale_facs[layer.name]
         if layer.activation.__name__ == 'softmax':
             # When using a certain percentile or even the max, the scaling
             # factor can be extremely low in case of many output classes
@@ -147,24 +148,20 @@ def normalize_parameters(model, config, **kwargs):
             # greatly. But large biases cause large offsets in the beginning
             # of the simulation (spike input absent).
             scale_fac = 1.0
-            print("Using scale factor {:.2f} for softmax layer.".format(
-                scale_fac))
-        else:
-            scale_fac = scale_facs[layer.name]
+        print(
+            "Using scale factor {:.2f} for {:s} layer.".format(
+                scale_fac, layer.name
+            )
+        )
+
         inbound = get_inbound_layers_with_params(layer)
-        if len(inbound) == 0:  # Input layer
-            parameters_norm = [
-                parameters[0] * scale_facs[model.layers[0].name] / scale_fac,
-                parameters[1] / scale_fac]
-        elif len(inbound) == 1:
-            parameters_norm = [
-                parameters[0] * scale_facs[inbound[0].name] / scale_fac,
-                parameters[1] / scale_fac]
-        else:
+
+        bias_scale_fac = scale_fac
+        if len(inbound) > 1:
             # In case of this layer receiving input from several layers, we can
             # apply scale factor to bias as usual, but need to rescale weights
             # according to their respective input.
-            parameters_norm = [parameters[0], parameters[1] / scale_fac]
+            parameters_norm = [parameters[0], parameters[1] / bias_scale_fac]
             if parameters[0].ndim == 4:
                 # In conv layers, just need to split up along channel dim.
                 offset = 0  # Index offset at input filter dimension
@@ -180,6 +177,19 @@ def normalize_parameters(model, config, **kwargs):
                 # concatenated and then flattened. The neuron position in the
                 # flattened layer depend on the image_data_format.
                 raise NotImplementedError
+        else:
+            weight_scale_fac = (
+                scale_facs[
+                    model.layers[0].name
+                    if len(inbound) == 0  # Input layer
+                    else inbound[0].name
+                ]
+                / scale_fac
+            )
+            parameters_norm = [
+                parameters[0] * weight_scale_fac,
+                parameters[1] / bias_scale_fac
+            ]
 
         # Check if the layer happens to be Sparse
         # if the layer is sparse, add the mask to the list of parameters
