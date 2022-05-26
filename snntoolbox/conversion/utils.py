@@ -138,6 +138,8 @@ def normalize_parameters(model, config, **kwargs):
         if len(layer.weights) == 0:
             continue
 
+        normalize_thresholds_instead_of_weights = True
+
         # Scale parameters
         parameters = layer.get_weights()
         scale_fac = scale_facs[layer.name]
@@ -190,13 +192,17 @@ def normalize_parameters(model, config, **kwargs):
                 parameters[0] * weight_scale_fac,
                 parameters[1] / bias_scale_fac
             ]
+            if normalize_thresholds_instead_of_weights:
+                layer.v_thresh = config.getfloat('cell', 'v_thresh') / weight_scale_fac
+
 
         # Check if the layer happens to be Sparse
         # if the layer is sparse, add the mask to the list of parameters
         if len(parameters) == 3:
             parameters_norm.append(parameters[-1])
         # Update model with modified parameters
-        layer.set_weights(parameters_norm)
+        if not normalize_thresholds_instead_of_weights:
+            layer.set_weights(parameters_norm)
 
     # Plot distributions of weights and activations before and after norm.
     if 'normalization_activations' in eval(config.get('output', 'plot_vars')):

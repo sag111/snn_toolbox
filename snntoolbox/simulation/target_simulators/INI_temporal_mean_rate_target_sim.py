@@ -64,6 +64,9 @@ class SNN(AbstractSNN):
             inbound = inbound[0]
         layer_kwargs = layer.get_config()
         layer_kwargs['config'] = self.config
+        if hasattr(layer, 'v_thresh'):
+            print('Setting threshold for layer', layer.name, layer.v_thresh)
+            layer_kwargs['config']['cell']['v_thresh'] = str(layer.v_thresh)
 
         # Check if layer uses binary activations. In that case, we will want to
         # tell the following to MaxPool layer because then we can use a

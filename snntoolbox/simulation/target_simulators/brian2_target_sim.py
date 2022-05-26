@@ -107,7 +107,11 @@ class SNN(AbstractSNN):
 
         self.layers.append(self.sim.NeuronGroup(
             np.prod(layer.output_shape[1:]), model=self.eqs, method='euler',
-            reset=self.v_reset, threshold=self.threshold,
+            reset=self.v_reset, threshold=(
+                    'v >= {current_thresh}'.format(current_thresh=layer.v_thresh)
+                    if hasattr(layer, 'v_thresh')
+                    else self.threshold
+                ),
             dt=self._dt * self.sim.ms))
         self.connections.append(self.sim.Synapses(
             self.layers[-2], self.layers[-1], 'w:1', on_pre='v+=w',
