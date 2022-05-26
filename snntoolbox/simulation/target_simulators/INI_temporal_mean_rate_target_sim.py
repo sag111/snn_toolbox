@@ -374,8 +374,7 @@ class SNN(AbstractSNN):
         t = 0
         while True:
             x_accum += x
-            # Neglect threshold here (always 1 in input layer)
-            spikecount = np.sum(np.floor(x_accum))  # / v_thresh
+            spikecount = np.sum(np.floor(x_accum)) / v_thresh
             if spikecount > max_spikecount_norm:
                 print(t)
                 return min(t, self._num_timesteps)
