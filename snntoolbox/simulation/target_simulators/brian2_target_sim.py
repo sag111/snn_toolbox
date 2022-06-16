@@ -69,7 +69,6 @@ class SNN(AbstractSNN):
         self.statemonitors = []
         self.snn = None
         self._input_layer = None
-        self._cell_params = None
 
         # Track the output layer spikes.
         self.output_spikemonitor = None
@@ -87,8 +86,15 @@ class SNN(AbstractSNN):
         else:
             self.layers.append(self.sim.NeuronGroup(
                 np.prod(input_shape[1:]), model=self.eqs, method='euler',
-                reset=self.v_reset, threshold=self.threshold,
-                dt=self._dt * self.sim.ms))
+                reset=self.v_reset,
+                threshold=self.threshold,
+                dt=self._dt * self.sim.ms,
+                namespace={
+                    'v_thresh': self.config.getfloat('cell', 'v_thresh'),
+                    'v_reset': self.config.getfloat('cell', 'v_reset'),
+                    'tau_m': self.config.getfloat('cell', 'tau_m') * self.sim.ms
+                }
+            ))
         self.layers[0].add_attribute('label')
         self.layers[0].label = 'InputLayer'
         self.spikemonitors.append(self.sim.SpikeMonitor(self.layers[0]))
@@ -106,13 +112,22 @@ class SNN(AbstractSNN):
             return
 
         self.layers.append(self.sim.NeuronGroup(
-            np.prod(layer.output_shape[1:]), model=self.eqs, method='euler',
-            reset=self.v_reset, threshold=(
-                    'v >= {current_thresh}'.format(current_thresh=layer.v_thresh)
-                    if hasattr(layer, 'v_thresh')
-                    else self.threshold
+            np.prod(layer.output_shape[1:]),
+            model=self.eqs,
+            method='euler',
+            reset=self.v_reset,
+            threshold=self.threshold,
+            dt=self._dt * self.sim.ms,
+            namespace={
+                'v_thresh': (
+                    layer.v_thresh if hasattr(layer, 'v_thresh')
+                    else self.config.getfloat('cell', 'v_thresh')
                 ),
-            dt=self._dt * self.sim.ms))
+                'v_reset': self.config.getfloat('cell', 'v_reset'),
+                'tau_m': self.config.getfloat('cell', 'tau_m') * self.sim.ms
+            }
+        ))
+
         self.connections.append(self.sim.Synapses(
             self.layers[-2], self.layers[-1], 'w:1', on_pre='v+=w',
             dt=self._dt * self.sim.ms))
@@ -228,7 +243,7 @@ class SNN(AbstractSNN):
         else:
             self._input_layer.bias = inputs
 
-        self.snn.run(self._duration * self.sim.ms, namespace=self._cell_params,
+        self.snn.run(self._duration * self.sim.ms,
                      report='stdout', report_period=10 * self.sim.ms)
 
         output_b_l_t = self.get_recorded_vars(self.layers)
@@ -324,10 +339,7 @@ class SNN(AbstractSNN):
         self.is_built = True
 
     def init_cells(self):
-        self._cell_params = {
-            'v_thresh': self.config.getfloat('cell', 'v_thresh'),
-            'v_reset': self.config.getfloat('cell', 'v_reset'),
-            'tau_m': self.config.getfloat('cell', 'tau_m') * self.sim.ms}
+        pass
 
     def get_spiketrains(self, **kwargs):
         j = self._spiketrains_container_counter
