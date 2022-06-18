@@ -49,6 +49,7 @@ normalize_thresholds = False
 
 [conversion]
 softmax_to_relu = False
+add_softmax_to_last_layer = False
 maxpool_type = fir_max
 max2avg_pool = False
 spike_code = temporal_mean_rate

@@ -15,6 +15,8 @@ import sys
 from abc import abstractmethod
 import numpy as np
 from tensorflow import keras
+from tensorflow import constant as tf_constant  # for applying softmax
+from tensorflow.nn import softmax
 
 from snntoolbox.bin.utils import get_log_keys, get_plot_keys, \
     initialize_simulator
@@ -808,6 +810,16 @@ class AbstractSNN:
             # Reset network variables.
             self.reset(input_vector_number)
             self.reset_log_vars()
+
+        if self.config.getboolean(
+            'conversion', 'add_softmax_to_last_layer'
+        ):
+            output_spike_rates = softmax(
+                tf_constant(
+                    output_spike_rates,
+                    dtype=float
+                )
+            )
 
         return output_spike_rates
 
