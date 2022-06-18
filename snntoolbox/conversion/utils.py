@@ -138,7 +138,9 @@ def normalize_parameters(model, config, **kwargs):
         if len(layer.weights) == 0:
             continue
 
-        normalize_thresholds_instead_of_weights = True
+        normalize_thresholds_instead_of_weights = config.getboolean(
+            'normalization', 'normalize_thresholds'
+        )
 
         # Scale parameters
         parameters = layer.get_weights()

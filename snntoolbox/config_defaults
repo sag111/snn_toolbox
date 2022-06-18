@@ -45,6 +45,7 @@ online_normalization = False
 diff_to_max_rate = 200
 diff_to_min_rate = 100
 timestep_fraction = 10
+normalize_thresholds = False
 
 [conversion]
 softmax_to_relu = False
