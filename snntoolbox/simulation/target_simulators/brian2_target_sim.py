@@ -102,6 +102,13 @@ class SNN(AbstractSNN):
         # Need placeholders "None" for layers without states:
         self.statemonitors.append(self.sim.StateMonitor(self.layers[0], [],
                                                         False))
+        self.connection_parameters = [[]]
+        self.neuron_parameters = [
+            [{
+                'thres': 0,
+                'bias': 0,
+            }] * np.prod(input_shape[1:])
+        ]
 
     def add_layer(self, layer):
 
@@ -190,6 +197,18 @@ class SNN(AbstractSNN):
                 ('weight', 'float'),
             ]
         )
+
+        self.connection_parameters.append(connections)
+        self.neuron_parameters.append([
+            {
+                'thres': getattr(
+                    layer, 'v_thresh',
+                    self.config.getfloat('cell', 'v_thresh')
+                ),
+                'bias': neuron_bias
+            }
+            for neuron_bias in biases
+        ])
 
         self.connections[-1].connect(i=connections['pre_index'].astype('int64'),
                                      j=connections['post_index'].astype('int64'))
