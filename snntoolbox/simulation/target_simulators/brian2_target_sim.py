@@ -180,7 +180,7 @@ class SNN(AbstractSNN):
         else:
             for i in range(weights.shape[0]):
                 for j in range(weights.shape[1]):
-                    connections.append((i, j, weights[i, j], delay))
+                    connections.append((i, j, weights[i, j]))
 
         connections = np.array(connections)
 
