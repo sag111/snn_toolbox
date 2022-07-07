@@ -64,6 +64,7 @@ class SNN(AbstractSNN):
         else:
             self.v_reset = 'v = v_reset'
         self.eqs = '''dv/dt = bias : 1
+                      v_thresh : 1
                       bias : hertz'''
         self.spikemonitors = []
         self.statemonitors = []
@@ -90,11 +91,11 @@ class SNN(AbstractSNN):
                 threshold=self.threshold,
                 dt=self._dt * self.sim.ms,
                 namespace={
-                    'v_thresh': self.config.getfloat('cell', 'v_thresh'),
                     'v_reset': self.config.getfloat('cell', 'v_reset'),
                     'tau_m': self.config.getfloat('cell', 'tau_m') * self.sim.ms
                 }
             ))
+        self.layers[0].v_thresh = self.config.getfloat('cell', 'v_thresh')
         self.layers[0].add_attribute('label')
         self.layers[0].label = 'InputLayer'
         self.spikemonitors.append(self.sim.SpikeMonitor(self.layers[0]))
@@ -119,14 +120,13 @@ class SNN(AbstractSNN):
             threshold=self.threshold,
             dt=self._dt * self.sim.ms,
             namespace={
-                'v_thresh': (
-                    layer.v_thresh if hasattr(layer, 'v_thresh')
-                    else self.config.getfloat('cell', 'v_thresh')
-                ),
                 'v_reset': self.config.getfloat('cell', 'v_reset'),
                 'tau_m': self.config.getfloat('cell', 'tau_m') * self.sim.ms
             }
         ))
+        self.layers[-1].v_thresh = getattr(
+            layer, 'v_thresh', self.config.getfloat('cell', 'v_thresh')
+        )
 
         self.connections.append(self.sim.Synapses(
             self.layers[-2], self.layers[-1], 'w:1', on_pre='v+=w',
