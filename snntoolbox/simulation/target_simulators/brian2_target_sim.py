@@ -182,12 +182,19 @@ class SNN(AbstractSNN):
                 for j in range(weights.shape[1]):
                     connections.append((i, j, weights[i, j]))
 
-        connections = np.array(connections)
+        connections = np.array(
+            connections,
+            dtype=[
+                ('pre_index', 'int64'),
+                ('post_index', 'int64'),
+                ('weight', 'float'),
+            ]
+        )
 
-        self.connections[-1].connect(i=connections[:, 0].astype('int64'),
-                                     j=connections[:, 1].astype('int64'))
+        self.connections[-1].connect(i=connections['pre_index'].astype('int64'),
+                                     j=connections['post_index'].astype('int64'))
 
-        self.connections[-1].w = connections[:, 2]
+        self.connections[-1].w = connections['weight']
 
     def build_convolution(self, layer, weights=None):
 
