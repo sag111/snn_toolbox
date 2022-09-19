@@ -195,7 +195,10 @@ def normalize_parameters(model, config, **kwargs):
                 parameters[1] / bias_scale_fac
             ]
             if normalize_thresholds_instead_of_weights:
-                layer.v_thresh = config.getfloat('cell', 'v_thresh') / weight_scale_fac
+                layer.v_thresh = np.round(
+                    config.getfloat('cell', 'v_thresh')
+                    / weight_scale_fac
+                )
 
 
         # Check if the layer happens to be Sparse
