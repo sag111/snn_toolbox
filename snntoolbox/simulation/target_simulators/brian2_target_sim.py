@@ -368,6 +368,16 @@ class SNN(AbstractSNN):
     def init_cells(self):
         pass
 
+    def get_flattened_spiketrains_for_layer(self, layer_number):
+        spiketrain_dict = (
+            self.spikemonitors[layer_number]
+            if layer_number != -1
+            else self.output_spikemonitor
+        ).spike_trains()
+        spiketrains_flat = [np.asarray(spiketrain_dict[key]) / self.sim.ms for key
+                                     in spiketrain_dict.keys()]
+        return spiketrains_flat
+
     def get_spiketrains(self, **kwargs):
         j = self._spiketrains_container_counter
         if self.spiketrains_n_b_l_t is None or \
@@ -381,29 +391,26 @@ class SNN(AbstractSNN):
         # by `get_spiketrains_input()`.
         i = len(self.spikemonitors) - 1 if kwargs[str('monitor_index')] == -1 \
             else kwargs[str('monitor_index')] + 1
-        spiketrain_dict = self.spikemonitors[i].spike_trains()
-        spiketrains_flat = np.array([spiketrain_dict[key] / self.sim.ms for key
-                                     in spiketrain_dict.keys()])
-        spiketrains_b_l_t = \
-            self.reshape_flattened_spiketrains(spiketrains_flat, shape)
+        spiketrains_b_l_t = self.reshape_flattened_spiketrains(
+            self.get_flattened_spiketrains_for_layer(i),
+            shape
+        )
         return spiketrains_b_l_t
 
     def get_spiketrains_input(self):
         shape = list(self.parsed_model.input_shape) + [self._num_timesteps]
-        spiketrain_dict = self.spikemonitors[0].spike_trains()
-        spiketrains_flat = np.array([spiketrain_dict[key] / self.sim.ms for key
-                                     in spiketrain_dict.keys()])
-        spiketrains_b_l_t = \
-            self.reshape_flattened_spiketrains(spiketrains_flat, shape)
+        spiketrains_b_l_t = self.reshape_flattened_spiketrains(
+            self.get_flattened_spiketrains_for_layer(0),
+            shape
+        )
         return spiketrains_b_l_t
 
     def get_spiketrains_output(self):
         shape = [self.batch_size, self.num_classes, self._num_timesteps]
-        spiketrain_dict = self.output_spikemonitor.spike_trains()
-        spiketrains_flat = np.array([spiketrain_dict[key] / self.sim.ms for key
-                                     in spiketrain_dict.keys()])
-        spiketrains_b_l_t = \
-            self.reshape_flattened_spiketrains(spiketrains_flat, shape)
+        spiketrains_b_l_t = self.reshape_flattened_spiketrains(
+            self.get_flattened_spiketrains_for_layer(-1),
+            shape
+        )
         return spiketrains_b_l_t
 
     def get_vmem(self, **kwargs):
