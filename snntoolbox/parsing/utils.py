@@ -822,7 +822,7 @@ class AbstractModelParser:
         # Optimizer and loss do not matter because we only do inference.
         top_k = keras.metrics.TopKCategoricalAccuracy(
             self.config.getint('simulation', 'top_k'))
-        self.parsed_model.compile('sgd', 'categorical_crossentropy',
+        self.parsed_model.compile('sgd', 'sparse_categorical_crossentropy',
                                   ['accuracy', top_k])
         # Todo: Enable adding custom metric via self.input_model.metrics.
         self.parsed_model.summary()
