@@ -187,7 +187,7 @@ class SNN(AbstractSNN):
         else:
             for i in range(weights.shape[0]):
                 for j in range(weights.shape[1]):
-                    connections.append((i, j, weights[i, j]))
+                    connections.append((i, j, weights[i, j], delay))
 
         connections = np.array(
             connections,
@@ -195,6 +195,7 @@ class SNN(AbstractSNN):
                 ('pre_index', 'int64'),
                 ('post_index', 'int64'),
                 ('weight', 'float'),
+                ('delay', 'float'),
             ]
         )
 
