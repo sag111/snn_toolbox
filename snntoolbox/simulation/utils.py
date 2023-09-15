@@ -820,17 +820,25 @@ class AbstractSNN:
                     for t in range(cumulative_spikes.shape[1])
                 ]
             
-            np.savetxt(
-                f'spikes-vector_{input_vector_number:05d}.txt',
-                get_spikes_from_cumulative_spikes(spike_times),
-                '%d'
-            )
+            for layer_number in range(len(self.spiketrains_n_b_l_t)):
+                spike_trains = self.spiketrains_n_b_l_t[layer_number][0]
+                spike_rates = (spike_trains > 0).sum(axis=-1)
+                np.save(
+                    f'spike_rates-vector_{input_vector_number:05d}-layer_{layer_number}',
+                    spike_rates
+                )
+                np.savetxt(
+                    f'spike_rates-vector_{input_vector_number:05d}-layer_{layer_number}.txt',
+                    np.reshape(spike_rates, -1),
+                    '%d'
+                )
+                membrane_potentials = self.mem_n_b_l_t[layer_number][0]
             
             input_spikes = get_spikes_from_times(
                 self.get_spiketrains_input()[0]
             )
-            np.savetxt(
-                f'input_spikes-vector_{input_vector_number:05d}.txt',
+            np.save(
+                f'input_spikes-vector_{input_vector_number:05d}',
                 input_spikes,
                 '%d'
             )
