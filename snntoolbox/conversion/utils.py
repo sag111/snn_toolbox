@@ -161,6 +161,7 @@ def normalize_parameters(model, config, **kwargs):
         inbound = get_inbound_layers_with_params(layer)
 
         bias_scale_fac = scale_fac
+        big_value_to_increase_threshold = 100
         if len(inbound) > 1:
             # In case of this layer receiving input from several layers, we can
             # apply scale factor to bias as usual, but need to rescale weights
@@ -198,6 +199,7 @@ def normalize_parameters(model, config, **kwargs):
                 layer.v_thresh = np.round(
                     config.getfloat('cell', 'v_thresh')
                     / weight_scale_fac
+                    * big_value_to_increase_threshold
                 )
 
 
@@ -205,6 +207,7 @@ def normalize_parameters(model, config, **kwargs):
         # if the layer is sparse, add the mask to the list of parameters
         if len(parameters) == 3:
             parameters_norm.append(parameters[-1])
+        layer.set_weights([parameters[0] * big_value_to_increase_threshold] + parameters[1:])
         # Update model with modified parameters
         if not normalize_thresholds_instead_of_weights:
             layer.set_weights(parameters_norm)
