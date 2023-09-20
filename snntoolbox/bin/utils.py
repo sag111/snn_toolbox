@@ -587,7 +587,9 @@ def initialize_simulator(config):
         sim.setup(timestep=config.getfloat('simulation', 'dt'))
         return sim
     if simulator == 'brian2':
-        return import_module('brian2')
+        sim=import_module('brian2')
+        sim.prefs.codegen.runtime.cython.cache_dir = '/s/ls4/users/aserenko/.cython/brian_extensions'
+        return sim
     if simulator == 'loihi':
         import nxsdk.api.n2a as sim
         return sim
