@@ -1488,6 +1488,14 @@ def build_pooling(layer, delay):
     sx = layer.strides[1]
     sy = layer.strides[0]
 
+    def get_output_size(input_size, kernel_size, stride):
+        return int(
+            (input_size - kernel_size) / stride + 1
+        )
+
+    output_nx = get_output_size(nx, dx, sx)
+    output_ny = get_output_size(ny, dy, sy)
+
     weight = 1 / (dx * dy)
 
     connections = []
@@ -1495,8 +1503,10 @@ def build_pooling(layer, delay):
     for fout in range(nz):
         for y in range(0, ny - dy + 1, sy):
             for x in range(0, nx - dx + 1, sx):
-                target = int(x / sx + y / sy * ((nx - dx) / sx + 1) +
-                             fout * nx * ny / (dx * dy))
+                target = int(
+                    x / sx + y / sy * output_nx
+                    + fout * output_nx * output_ny
+                )
                 for k in range(dy):
                     source = x + (y + k) * nx + fout * nx * ny
                     for j in range(dx):
